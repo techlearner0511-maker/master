@@ -10,7 +10,11 @@ if (!url || !token) {
   console.error('Missing Redis credentials - connect an Upstash Redis database to this project in the Storage tab.');
 }
 
-const kv = new Redis({ url, token });
+// Disable the client's own JSON (de)serialization - our app already
+// JSON.stringifies/parses values itself, so leave Redis storing/returning
+// plain strings. Mixing both layers was causing values to come back
+// double-encoded (or not) inconsistently.
+const kv = new Redis({ url, token, automaticDeserialization: false });
 
 // Very small "auth": everything is namespaced by whatever passphrase the
 // client sends in the x-pin header. Same passphrase => same data.

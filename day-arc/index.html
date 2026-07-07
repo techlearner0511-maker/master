@@ -619,9 +619,15 @@ async function loadCycleState(key) {
   } catch (e) { return {}; }
 }
 
+let cycleSaveChain = Promise.resolve();
+
 async function saveCycleState(key, obj) {
-  try { await window.storage.set(key, JSON.stringify(obj), false); }
-  catch (e) { storageOk = false; }
+  const snapshot = JSON.stringify(obj);
+  cycleSaveChain = cycleSaveChain.then(async () => {
+    try { await window.storage.set(key, snapshot, false); }
+    catch (e) { storageOk = false; }
+  });
+  await cycleSaveChain;
 }
 
 let cycleState = {};
@@ -721,10 +727,19 @@ async function loadAll() {
   } catch (e) { convoLink = ''; }
 }
 
+// Serialize all saves through one chain so overlapping clicks can't race:
+// each save waits for the previous one to finish, and always sends whatever
+// `state` looks like at the moment it actually runs (not when it was queued).
+let saveChain = Promise.resolve();
+
 async function saveState() {
   const key = todayKey(new Date());
-  try { await window.storage.set(key, JSON.stringify(state), false); }
-  catch (e) { storageOk = false; }
+  const snapshot = JSON.stringify(state);
+  saveChain = saveChain.then(async () => {
+    try { await window.storage.set(key, snapshot, false); }
+    catch (e) { storageOk = false; }
+  });
+  await saveChain;
 }
 
 async function saveSettings() {
