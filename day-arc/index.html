@@ -152,6 +152,18 @@
     padding: 2px 6px; flex-shrink: 0;
   }
   .item .del-btn:hover { color: var(--dusk); }
+  .working-tag {
+    font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase;
+    background: rgba(108,143,199,0.18); color: var(--blue); border: 1px solid rgba(108,143,199,0.4);
+    padding: 2px 7px; border-radius: 999px; margin-left: 8px; font-weight: 600; white-space: nowrap;
+  }
+  .item-actions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+  .item-actions .work-btn {
+    cursor: pointer; font-size: 14px; color: var(--dim); padding: 2px 6px; line-height: 1;
+  }
+  .item-actions .work-btn.on { color: var(--blue); }
+  .item-actions .work-btn:hover { color: var(--blue); }
+  .item.working { background: rgba(108,143,199,0.05); border-radius: 8px; }
   .empty-note { font-size: 13px; color: var(--dim); padding: 10px 4px; }
   .counter-controls { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
   .counter-btn {
@@ -837,9 +849,15 @@ function renderGoalTab(kind) {
     Object.keys(groups).forEach(cat => {
       html += `<div class="section active"><div class="section-head"><div class="section-title">${cat}</div></div><div class="items">`;
       groups[cat].forEach(t => {
-        html += `<div class="item ${t.done?'done':''}" data-goalkind="${kind}" data-cid="${t.id}">
+        const showWorking = kind === 'weekly';
+        const isWorking = showWorking && !!t.working;
+        html += `<div class="item ${t.done?'done':''} ${isWorking?'working':''}" data-goalkind="${kind}" data-cid="${t.id}">
           <div class="box"></div><span class="label">${t.label}</span>
-          <span class="del-btn" data-deltype="${kind}" data-delid="${t.id}">×</span>
+          ${isWorking ? `<span class="working-tag">Working</span>` : ''}
+          <div class="item-actions">
+            ${showWorking ? `<span class="work-btn ${isWorking?'on':''}" data-worktype="${kind}" data-workid="${t.id}" title="Mark as currently working">⚡</span>` : ''}
+            <span class="del-btn" data-deltype="${kind}" data-delid="${t.id}">×</span>
+          </div>
         </div>`;
       });
       html += `</div></div>`;
@@ -861,6 +879,13 @@ function addGoalTasks(kind, text, category) {
 function toggleGoalTask(kind, id) {
   const t = GOAL_LISTS[kind].data.find(x => x.id === id);
   if (t) t.done = !t.done;
+  saveGoalList(kind);
+  render();
+}
+
+function toggleGoalWorking(kind, id) {
+  const t = GOAL_LISTS[kind].data.find(x => x.id === id);
+  if (t) t.working = !t.working;
   saveGoalList(kind);
   render();
 }
@@ -929,6 +954,12 @@ async function render() {
       e.stopPropagation();
       const kind = el.dataset.deltype;
       if (kind === 'weekly' || kind === 'monthly') deleteGoalTask(kind, el.dataset.delid);
+    });
+  });
+  document.querySelectorAll('.work-btn').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleGoalWorking(el.dataset.worktype, el.dataset.workid);
     });
   });
   const addBtn = document.getElementById('addCustomBtn');
