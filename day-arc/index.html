@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day Arc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: #F3EEE3;
+    --dim: #B9B2A0;
+    --bg-deep: #14152B;
+    --bg-mid: #241E3F;
+    --dawn: #E8A33D;
+    --dusk: #E86A5C;
+    --sage: #7F9A82;
+    --blue: #6C8FC7;
+    --line: rgba(243,238,227,0.14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
+    color: var(--ink);
+    font-family: 'Space Grotesk', sans-serif;
+    padding: 24px 18px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 30px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub { color: var(--dim); font-size: 14px; margin-bottom: 18px; }
+
+  .tabs {
+    display: flex; gap: 6px; margin-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    padding: 10px 16px; font-size: 14px; color: var(--dim);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    font-weight: 500;
+  }
+  .tab.active { color: var(--ink); border-bottom-color: var(--dawn); }
+
+  .streak-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .streak-pill {
+    background: rgba(243,238,227,0.06);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    color: var(--dim);
+  }
+  .streak-pill b { color: var(--dawn); font-weight: 600; }
+
+  .section {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    background: rgba(243,238,227,0.03);
+  }
+  .section.active { border-color: var(--dawn); }
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px;
+  }
+  .section-title { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; }
+  .section-time { font-size: 11.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .now-tag {
+    font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    background: var(--dawn); color: #1B1220; padding: 3px 8px; border-radius: 999px;
+    margin-left: 8px; font-weight: 600;
+  }
+  .items { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 4px;
+    border-bottom: 1px solid rgba(243,238,227,0.06);
+    cursor: pointer; user-select: none;
+  }
+  .item:last-child { border-bottom: none; }
+  .box {
+    width: 18px; height: 18px; border-radius: 5px;
+    border: 1.5px solid var(--dim);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .item.done .box { background: var(--sage); border-color: var(--sage); }
+  .item.done .box::after { content: '✓'; font-size: 11px; color: #14152B; font-weight: 700; }
+  .item span.label { font-size: 13.5px; }
+  .item.done span.label { color: var(--dim); text-decoration: line-through; text-decoration-color: rgba(185,178,160,0.5); }
+  .item .note { font-size: 11px; color: var(--dim); margin-left: auto; opacity: .75; white-space: nowrap; }
+
+  .day-badge {
+    display: inline-block; font-size: 11px; letter-spacing: .05em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 14px; font-weight: 600;
+  }
+
+  .level-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .level-btn {
+    padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line);
+    background: rgba(243,238,227,0.04); color: var(--dim); font-size: 12.5px; cursor: pointer;
+  }
+  .level-btn.sel { border-color: var(--blue); color: var(--ink); background: rgba(108,143,199,0.15); }
+  .level-detail { font-size: 12.5px; color: var(--dim); margin-bottom: 18px; line-height: 1.5; }
+
+  .reset-row { text-align: center; margin-top: 24px; }
+  .reset-btn {
+    background: none; border: 1px solid var(--line); color: var(--dim);
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px;
+    padding: 8px 16px; border-radius: 999px; cursor: pointer;
+  }
+  .reset-btn:hover { border-color: var(--dusk); color: var(--dusk); }
+
+  .add-box {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 16px;
+    background: rgba(243,238,227,0.03);
+  }
+  .add-box textarea {
+    width: 100%; min-height: 64px; resize: vertical;
+    background: rgba(243,238,227,0.05); border: 1px solid var(--line);
+    border-radius: 8px; color: var(--ink); font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; padding: 8px; margin-bottom: 8px;
+  }
+  .add-box .hint { font-size: 11px; color: var(--dim); margin-bottom: 8px; }
+  .add-box input[type="text"], .add-box input[type="number"] {
+    width: 100%; background: rgba(243,238,227,0.05); border: 1px solid var(--line);
+    border-radius: 8px; color: var(--ink); font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; padding: 8px; margin-bottom: 8px;
+  }
+  .add-row { display: flex; gap: 8px; }
+  .add-row input[type="number"] { width: 90px; flex-shrink: 0; }
+  .add-btn { flex-shrink: 0; }
+  .add-btn {
+    background: var(--dawn); color: #1B1220; border: none;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12.5px;
+    padding: 8px 16px; border-radius: 999px; cursor: pointer;
+  }
+  .item .del-btn {
+    margin-left: auto; color: var(--dim); font-size: 15px; cursor: pointer;
+    padding: 2px 6px; flex-shrink: 0;
+  }
+  .item .del-btn:hover { color: var(--dusk); }
+  .empty-note { font-size: 13px; color: var(--dim); padding: 10px 4px; }
+  .counter-controls { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+  .counter-btn {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1px solid var(--line); background: rgba(243,238,227,0.05);
+    color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; user-select: none; flex-shrink: 0;
+  }
+  .counter-btn:hover { border-color: var(--dawn); color: var(--dawn); }
+  .counter-count { font-variant-numeric: tabular-nums; font-size: 12.5px; min-width: 44px; text-align: center; color: var(--dim); }
+  .item.done .counter-count { color: var(--sage); }
+  .counter-bar-track {
+    height: 6px; border-radius: 3px; width: 100%;
+    background: rgba(243,238,227,0.08); overflow: hidden;
+  }
+  .counter-bar-fill { height: 100%; border-radius: 3px; transition: width .2s ease; }
+
+  .pin-overlay {
+    position: fixed; inset: 0; background: rgba(10,10,20,0.92);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; padding: 20px;
+  }
+  .pin-card {
+    max-width: 380px; width: 100%;
+    border: 1px solid var(--line); border-radius: 16px;
+    background: var(--bg-mid); padding: 24px; text-align: left;
+  }
+  .pin-card h2 { font-family: 'Fraunces', serif; font-size: 20px; margin: 0 0 8px; }
+  .pin-card p { font-size: 13px; color: var(--dim); line-height: 1.5; margin: 0 0 14px; }
+  .pin-card input {
+    width: 100%; background: rgba(243,238,227,0.05); border: 1px solid var(--line);
+    border-radius: 8px; color: var(--ink); font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; padding: 10px; margin-bottom: 10px; box-sizing: border-box;
+  }
+  .pin-card button {
+    width: 100%; background: var(--dawn); color: #1B1220; border: none;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13.5px;
+    padding: 10px; border-radius: 999px; cursor: pointer;
+  }
+  .pin-error { color: var(--dusk); font-size: 12px; margin: -4px 0 10px; min-height: 14px; }
+</style>
+</head>
+<body>
+
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-card">
+    <h2>Sync your data</h2>
+    <p>Pick a passphrase. Enter the <b>same</b> one on every device to see the same data — anyone with this passphrase can read/edit it, so keep it private but memorable (not your bank password).</p>
+    <input type="password" id="pinInput" placeholder="Your passphrase" autocomplete="off">
+    <div class="pin-error" id="pinError"></div>
+    <button id="pinSubmit">Continue</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>Day Arc</h1>
+  <div class="sub" id="dateLabel">Loading…</div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="routine">Routine</div>
+    <div class="tab" data-tab="workout">Workout</div>
+    <div class="tab" data-tab="nutrition">Nutrition</div>
+    <div class="tab" data-tab="cycles">Cycles</div>
+    <div class="tab" data-tab="weeklygoals">Weekly Goals</div>
+    <div class="tab" data-tab="monthlygoals">Monthly Goals</div>
+    <div class="tab" data-tab="convo">Conversation</div>
+  </div>
+
+  <div class="streak-row" id="streakRow"></div>
+  <div id="tabContent"></div>
+
+  <div class="reset-row">
+    <button class="reset-btn" id="resetBtn">Reset today's checks</button>
+  </div>
+</div>
+
+<script>
+// ---------- CROSS-DEVICE STORAGE SHIM ----------
+// Replaces the in-app window.storage (which only works inside claude.ai artifacts)
+// with calls to our own /api/kv serverless function backed by Vercel KV,
+// so the same passphrase pulls the same data on any device.
+const PIN_STORAGE_KEY = 'dayarc_pin';
+
+function getPin() { return localStorage.getItem(PIN_STORAGE_KEY) || ''; }
+
+async function kvRequest(method, params, body) {
+  const pin = getPin();
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`/api/kv?${qs}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-pin': pin
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`storage ${method} failed: ${res.status}`);
+  return res.json();
+}
+
+window.storage = {
+  async get(key, shared = false) {
+    return kvRequest('GET', { key, shared: String(shared) });
+  },
+  async set(key, value, shared = false) {
+    return kvRequest('POST', { shared: String(shared) }, { key, value });
+  },
+  async delete(key, shared = false) {
+    return kvRequest('DELETE', { key, shared: String(shared) });
+  },
+  async list(prefix = '', shared = false) {
+    return kvRequest('GET', { list: 'true', prefix, shared: String(shared) });
+  }
+};
+
+function initPinGate() {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('pinOverlay');
+    const input = document.getElementById('pinInput');
+    const submit = document.getElementById('pinSubmit');
+    const errorEl = document.getElementById('pinError');
+
+    const existing = getPin();
+    if (existing) {
+      overlay.style.display = 'none';
+      resolve();
+      return;
+    }
+
+    submit.addEventListener('click', () => {
+      const val = input.value.trim();
+      if (val.length < 4) {
+        errorEl.textContent = 'Use at least 4 characters.';
+        return;
+      }
+      localStorage.setItem(PIN_STORAGE_KEY, val);
+      overlay.style.display = 'none';
+      resolve();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submit.click();
+    });
+    input.focus();
+  });
+}
+
+const ROUTINE_PREFIX = 'routine:';
+const SETTINGS_KEY = 'settings';
+
+function todayKey(d) { return ROUTINE_PREFIX + d.toISOString().slice(0,10); }
+
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_COLORS = ['#B9B2A0','#E86A5C','#6C8FC7','#7F9A82','#E8A33D','#B07FC7','#E8C93D'];
+
+// ---------- ROUTINE TAB ----------
+const MORNING_MOBILITY = [
+  {id:'m_tadasana', label:'Tadasana', note:'2–3 min'},
+  {id:'m_catcow', label:'Cat-Cow', note:'2×10–15'},
+  {id:'m_cobra', label:'Cobra Pose', note:'3×20–30s'},
+  {id:'m_fwdbend', label:'Standing Forward Bend', note:'2×30s'},
+  {id:'m_squat', label:'Deep Squat Hold', note:'2–5 min'},
+  {id:'m_pelvic', label:'Pelvic Floor Exercises', note:'5 min'},
+  {id:'m_neck', label:'Neck Mobility (all directions)'},
+  {id:'m_breath', label:'Diaphragmatic Breathing', note:'5 min'},
+];
+
+function routineSections(d) {
+  const sal = (d.getDay() === 1 || d.getDay() === 3 || d.getDay() === 5);
+  const hairDay = (d.getDay() === 1 || d.getDay() === 4 || d.getDay() === 6);
+  const secs = [
+    { id:'morning', title:'Morning Ritual', start:6*60+5, end:7*60, items:[
+      {id:'sun', label:'Look toward sun', note:'5 min'},
+      {id:'meditate', label:'Meditation'},
+      {id:'m_workout_check', label:'Workout'},
+      {id:'chess', label:'Chess'},
+      {id:'mew', label:'Start mewing'},
+      {id:'bed', label:'Bed lagao'},
+      {id:'glasses', label:'Clean glasses'},
+      {id:'gmail_am', label:'Gmail check'},
+    ]},
+    { id:'skincare_am', title:'Skincare — Morning', start:6*60, end:6*60+30, items:[
+      {id:'am_lipbalm', label:'Lip balm'},
+      {id:'am_cleanser', label: sal ? 'Salicylic cleanser' : 'Gentle cleanser', note: sal ? '3x/week — today' : ''},
+      {id:'am_vitc', label:'Vitamin C'},
+      {id:'am_sunscreen', label:'Sunscreen'},
+    ]},
+    { id:'college', title:'College', start:7*60, end:18*60, items:[] },
+    { id:'evening1', title:'Work + Journal', start:18*60, end:20*60, items:[
+      {id:'study1', label:'Work'},
+      {id:'journal', label:'Review journal — write topics'},
+    ]},
+    { id:'dinner', title:'Dinner + Shower', start:20*60, end:21*60, items:[
+      {id:'dinner', label:'Dinner'},
+      {id:'shower', label:'Shower', note:'90 min before bed'},
+    ]},
+    { id:'evening2', title:'Work Block', start:21*60, end:22*60, items:[
+      {id:'study2', label:'Work'},
+    ]},
+    { id:'skincare_pm', title:'Skincare — Night', start:21*60+30, end:22*60, items:[
+      {id:'pm_cleanser', label: sal ? 'Salicylic cleanser' : 'Gentle cleanser', note: sal ? '3x/week — today' : ''},
+      {id:'pm_vaseline', label:'Vaseline on eyes and lips'},
+      {id:'pm_moist', label:'Moisturizer'},
+      {id:'pm_tongue', label:'Tongue cleaner'},
+    ]},
+  ];
+  if (hairDay) {
+    secs.push({ id:'haircare', title:'Haircare', start:20*60, end:20*60+20, items:[
+      {id:'hc_shampoo', label:'Shampoo'},
+      {id:'hc_conditioner', label:'Conditioner'},
+    ]});
+  }
+  secs.push({ id:'recovery', title:'Night Recovery (10–15 min)', start:22*60, end:22*60+15, items:[
+    {id:'r_cobra', label:'Cobra Pose', note:'3×30s'},
+    {id:'r_pushup', label:'Push-ups', note:'2–4 sets'},
+    {id:'r_stretch', label:'Full body stretching', note:'5–10 min'},
+    {id:'r_box', label:'Box breathing', note:'5 min'},
+    {id:'r_book', label:'Book reading'},
+  ]});
+  return secs;
+}
+
+const WEEKLY_TASKS = [
+  {id:'su_table', label:'Table cleaning'},
+  {id:'su_college', label:'Revise college study'},
+  {id:'su_coding', label:'Revise coding'},
+  {id:'su_notes', label:'Digitalise notes'},
+  {id:'su_scrub', label:'Skin scrubbing'},
+  {id:'su_steam', label:'Face steam'},
+  {id:'su_hygiene', label:'Hygiene cleaning'},
+  {id:'su_ghee', label:'Ghee on lips'},
+  {id:'su_inversion', label:'Upside-down head massage'},
+  {id:'su_cooking', label:'Learn more cooking'},
+  {id:'su_hair', label:'Hair removal'},
+  {id:'su_bathroom', label:'Clean bathroom'},
+  {id:'su_fan', label:'Clean fan'},
+  {id:'su_pillow', label:'Wash pillowcase'},
+  {id:'su_coldshower', label:'Cold shower'},
+  {id:'su_sprint', label:'Sprinting'},
+  {id:'su_sports', label:'Play athletic sports'},
+];
+
+// ---------- WORKOUT TAB ----------
+const WORKOUTS = {
+  1: { label:'Lower Body Strength', color:'#E86A5C', items:[
+    {id:'w_backsquat', label:'Back Squat'},
+    {id:'w_rdl', label:'Romanian Deadlift'},
+    {id:'w_bulgarian', label:'Bulgarian Split Squat'},
+    {id:'w_lunges', label:'Walking Lunges'},
+    {id:'w_calf', label:'Standing Calf Raise'},
+    {id:'w_tib', label:'Tibialis Raise'},
+    {id:'w_hangleg', label:'Hanging Leg Raise'},
+    {id:'w_plank', label:'Plank'},
+    {id:'w_stretch', label:'Stretching', note:'10 min'},
+  ]},
+  2: { label:'Upper Body Strength + Neck + Combat', color:'#6C8FC7', items:[
+    {id:'w_bench', label:'Bench Press'},
+    {id:'w_pullup', label:'Pull-ups'},
+    {id:'w_row', label:'Barbell Row'},
+    {id:'w_ohp', label:'Overhead Press'},
+    {id:'w_dips', label:'Dips'},
+    {id:'w_facepull', label:'Face Pull'},
+    {id:'w_farmer', label:'Farmer Carry'},
+    {id:'w_hang', label:'Dead Hang'},
+    {id:'w_neckflex', label:'Neck Flexion'},
+    {id:'w_neckext', label:'Neck Extension'},
+    {id:'w_neckside', label:'Neck Side Flexion'},
+    {id:'w_neckiso', label:'Neck Isometric Holds'},
+    {id:'w_combat', label:'Combat', note:'60–90 min'},
+  ]},
+  3: { label:'Athletic Day', color:'#7F9A82', items:[
+    {id:'w_zone2', label:'Zone 2 Cardio', note:'40–60 min'},
+    {id:'w_rope', label:'Jump Rope'},
+    {id:'w_ladder', label:'Agility Ladder'},
+    {id:'w_cones', label:'Cone Drills'},
+    {id:'w_boxjump', label:'Box Jumps'},
+    {id:'w_broadjump', label:'Broad Jumps'},
+    {id:'w_slams', label:'Medicine Ball Slams'},
+    {id:'w_mobflow', label:'Mobility Flow'},
+    {id:'w_foam', label:'Foam Rolling', note:'optional'},
+  ]},
+  4: { label:'Posterior Chain + Injury Prevention', color:'#E8A33D', items:[
+    {id:'w_deadlift', label:'Deadlift'},
+    {id:'w_frontsquat', label:'Front Squat'},
+    {id:'w_hipthrust', label:'Hip Thrust'},
+    {id:'w_hamcurl', label:'Hamstring Curl'},
+    {id:'w_slrdl', label:'Single-leg RDL'},
+    {id:'w_abwheel', label:'Ab Wheel'},
+    {id:'w_pallof', label:'Pallof Press'},
+    {id:'w_sideplank', label:'Side Plank'},
+    {id:'w_rotator', label:'Rotator Cuff Work'},
+    {id:'w_tib2', label:'Tibialis Raises'},
+    {id:'w_spanish', label:'Spanish Squats'},
+    {id:'w_wrist', label:'Wrist Strengthening'},
+  ]},
+  5: { label:'Upper Body Hypertrophy + Combat', color:'#B07FC7', items:[
+    {id:'w_incline', label:'Incline Bench'},
+    {id:'w_latpull', label:'Lat Pulldown'},
+    {id:'w_csrow', label:'Chest-supported Row'},
+    {id:'w_dbshoulder', label:'Dumbbell Shoulder Press'},
+    {id:'w_lateral', label:'Lateral Raise'},
+    {id:'w_biceps', label:'Biceps'},
+    {id:'w_triceps', label:'Triceps'},
+    {id:'w_platepinch', label:'Plate Pinch'},
+    {id:'w_wristroll', label:'Wrist Roller'},
+    {id:'w_combat2', label:'Combat', note:'60–90 min'},
+  ]},
+  6: { label:'Conditioning', color:'#E8C93D', items:[
+    {id:'w_cardio_choice', label:'Cardio (choose one)', note:'5km run / cycling / swim / hike / ruck'},
+    {id:'w_sprint', label:'Sprint Training', note:'6–10 rounds'},
+    {id:'w_longstretch', label:'Long Stretching Session'},
+  ]},
+  0: { label:'Recovery', color:'#B9B2A0', items:[
+    {id:'w_walk', label:'Walking', note:'30–60 min'},
+    {id:'w_yoga', label:'Yoga'},
+    {id:'w_fullmob', label:'Full-body Mobility'},
+    {id:'w_deepsquat', label:'Deep Squat Hold'},
+    {id:'w_neckmob', label:'Neck Mobility'},
+    {id:'w_stretch2', label:'Stretching'},
+    {id:'w_foam2', label:'Foam Rolling'},
+    {id:'w_breathing', label:'Breathing Exercises'},
+  ]},
+};
+
+const WARMUP = [
+  {id:'wu_cardio', label:'Light cardio', note:'3–5 min'},
+  {id:'wu_catcow', label:'Cat-Cow'},
+  {id:'wu_fwdbend', label:'Forward Bends'},
+  {id:'wu_shoulder', label:'Shoulder Mobility'},
+  {id:'wu_hip', label:'Hip Mobility'},
+  {id:'wu_ankle', label:'Ankle Mobility'},
+  {id:'wu_glute', label:'Glute Activation'},
+  {id:'wu_band', label:'Band Pull-aparts'},
+];
+
+const LEVELS = [
+  { n:1, range:'Weeks 1–8', detail:'Learn technique and consistency. 3 sets per exercise, 10–12 reps, 20–30 min cardio, combat 2x/week.' },
+  { n:2, range:'Weeks 9–16', detail:'Increase load and work capacity. 4 sets, heavier weights, sprint session added, grip 2x/week.' },
+  { n:3, range:'Weeks 17–32', detail:'Develop strength and athleticism. Main lifts 5×5, more explosive work, combat 3–4x/week, longer endurance sessions.' },
+  { n:4, range:'Lifetime', detail:'Maintain elite general fitness. Progressive overload, deload every 4–8 weeks, balance strength, conditioning, mobility, recovery.' },
+];
+
+// ---------- NUTRITION TAB ----------
+const CURD_ANCHOR = new Date(2026, 6, 7); // today — alternate-day curd starts from here
+function isCurdDay(d) {
+  const diff = Math.round((stripTime(d) - stripTime(CURD_ANCHOR)) / 86400000);
+  return ((diff % 2) + 2) % 2 === 0;
+}
+
+function nutritionSections(d) {
+  const curdToday = isCurdDay(d);
+  return [
+    { id:'n1', title:'5:00 AM', start:5*60, end:5*60+30, items:[
+      {id:'n_vitdmilk', label:'Vit D + milk', note:'500ml'},
+      {id:'n_sunflower1', label:'Sunflower seeds', note:'1 tbsp'},
+      {id:'n_flax1', label:'Flax seeds', note:'1 tbsp'},
+      {id:'n_banana1', label:'Bananas', note:'2'},
+    ]},
+    { id:'n2', title:'7:30 AM', start:7*60+30, end:8*60, items:[
+      {id:'n_eggs', label:'Eggs', note:'4'},
+      {id:'n_banana2', label:'Banana', note:'1'},
+      {id:'n_almonds1', label:'Almonds', note:'5'},
+    ]},
+    { id:'n3', title:'1:20 PM', start:13*60+20, end:13*60+50, items:[
+      {id:'n_rice', label:'Rice', note:'120g'},
+      {id:'n_soy', label:'Soy chunks', note:'50g'},
+      {id:'n_amlapowder', label:'Amla powder', note:'1 tbsp'},
+      {id:'n_veg', label:'Carrot / spinach'},
+    ]},
+    { id:'n4', title:'6:20 PM', start:18*60+20, end:18*60+50, items:[
+      {id:'n_fishoil', label:'Fish oil capsule'},
+      {id:'n_banana3', label:'Banana', note:'1'},
+      {id:'n_almonds2', label:'Almonds', note:'5'},
+      {id:'n_peanut', label:'Peanut', note:'30g'},
+    ]},
+    { id:'n5', title:'8:30 PM', start:20*60+30, end:21*60, items:[
+      {id:'n_roti', label:'Rotis', note:'3'},
+      {id:'n_dal', label:'Dal', note:'60g'},
+      {id:'n_onion', label:'Onion'},
+      {id:'n_tomato', label:'Tomato', note:'1 small'},
+    ]},
+    { id:'n6', title:'10:00 PM', start:22*60, end:22*60+15, items: curdToday
+      ? [
+        {id:'n_milk2', label:'Milk + sunflower seed', note:'250ml + 1 tbsp'},
+        {id:'n_curd', label:'Curd', note:'alternate days'},
+      ]
+      : [
+        {id:'n_milk2', label:'Milk + sunflower seed', note:'250ml + 1 tbsp'},
+      ]
+    },
+  ];
+}
+
+// ---------- CYCLES TAB (bi-weekly + monthly) ----------
+const BIWEEKLY_ANCHOR = new Date(2026, 6, 19); // July 19, 2026
+const BIWEEKLY_TASKS = [
+  {id:'bw_nails', label:'Nail cutting'},
+  {id:'bw_scooty', label:'Scooty cleaning'},
+  {id:'bw_disinfect', label:'Disinfect razors/hygiene items', note:'warm water, 10 min'},
+  {id:'bw_nightlight', label:'Increase night light slightly'},
+  {id:'bw_saltwater', label:'Saltwater teeth rinse'},
+  {id:'bw_fast', label:'Fast', note:'half or full day'},
+];
+const MONTHLY_TASKS = [
+  {id:'mo_earwax', label:'Clean ear wax'},
+  {id:'mo_devices', label:'Devices cleaning'},
+  {id:'mo_accounts', label:'Account cleaning / socials'},
+  {id:'mo_room', label:'Room cleaning'},
+  {id:'mo_resume', label:'Resume update'},
+  {id:'mo_linkedin', label:'LinkedIn profile update'},
+  {id:'mo_music', label:'Music updation'},
+  {id:'mo_icing', label:'Face icing', note:'optional'},
+];
+
+function stripTime(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+function biweeklyCycleInfo(d) {
+  const today = stripTime(d);
+  const anchor = stripTime(BIWEEKLY_ANCHOR);
+  const diffDays = Math.round((today - anchor) / 86400000);
+  if (diffDays < 0) return { isDue: false, cycleNum: -1, daysUntil: -diffDays };
+  const cycleNum = Math.floor(diffDays / 14);
+  const isDue = diffDays % 14 === 0;
+  const daysUntil = isDue ? 0 : (14 - (diffDays % 14));
+  return { isDue, cycleNum, daysUntil };
+}
+
+function weeklyCycleInfo(d) {
+  const today = stripTime(d);
+  const isDue = today.getDay() === 0;
+  const daysUntil = isDue ? 0 : (7 - today.getDay());
+  // ISO-ish week key: use the date of the Sunday this task belongs to
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - today.getDay());
+  const weekKey = sunday.toISOString().slice(0,10);
+  return { isDue, daysUntil, weekKey };
+}
+
+function firstSundayOfMonth(year, month) {
+  const d = new Date(year, month, 1);
+  const offset = (7 - d.getDay()) % 7;
+  return new Date(year, month, 1 + offset);
+}
+
+function monthlyCycleInfo(d) {
+  const today = stripTime(d);
+  const fs = stripTime(firstSundayOfMonth(d.getFullYear(), d.getMonth()));
+  const isDue = today.getTime() === fs.getTime();
+  let daysUntil = 0;
+  if (!isDue) {
+    if (today < fs) {
+      daysUntil = Math.round((fs - today) / 86400000);
+    } else {
+      const nextFs = stripTime(firstSundayOfMonth(d.getMonth() === 11 ? d.getFullYear()+1 : d.getFullYear(), (d.getMonth()+1) % 12));
+      daysUntil = Math.round((nextFs - today) / 86400000);
+    }
+  }
+  return { isDue, daysUntil, monthKey: `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}` };
+}
+
+async function loadCycleState(key) {
+  try {
+    const res = await window.storage.get(key, false);
+    return res && res.value ? JSON.parse(res.value) : {};
+  } catch (e) { return {}; }
+}
+
+async function saveCycleState(key, obj) {
+  try { await window.storage.set(key, JSON.stringify(obj), false); }
+  catch (e) { storageOk = false; }
+}
+
+let cycleState = {};
+
+async function renderCyclesTab(d) {
+  const bw = biweeklyCycleInfo(d);
+  const wk = weeklyCycleInfo(d);
+  const mo = monthlyCycleInfo(d);
+  let html = '';
+
+  if (bw.isDue) {
+    const key = `biweekly:${bw.cycleNum}`;
+    if (!(key in cycleState)) cycleState[key] = await loadCycleState(key);
+    const localState = cycleState[key] || {};
+    html += `<div class="day-badge" style="background:#E86A5C22; color:#E86A5C; border:1px solid #E86A5C55;">Bi-weekly — due today</div>`;
+    html += `<div class="section active"><div class="section-head"><div class="section-title">Bi-weekly Tasks</div></div><div class="items">`;
+    BIWEEKLY_TASKS.forEach(item => {
+      const done = !!localState[item.id];
+      html += `<div class="item ${done?'done':''}" data-cycle="biweekly" data-ckey="${key}" data-id="${item.id}">
+        <div class="box"></div><span class="label">${item.label}</span>${item.note?`<span class="note">${item.note}</span>`:''}</div>`;
+    });
+    html += `</div></div>`;
+  } else {
+    html += `<div class="level-detail">Bi-weekly tasks next due in <b>${bw.daysUntil}</b> day(s)${bw.cycleNum < 0 ? ' (starts July 19, 2026)' : ''}.</div>`;
+  }
+
+  if (wk.isDue) {
+    const key = `weekly:${wk.weekKey}`;
+    if (!(key in cycleState)) cycleState[key] = await loadCycleState(key);
+    const localState = cycleState[key] || {};
+    html += `<div class="day-badge" style="background:#6C8FC722; color:#6C8FC7; border:1px solid #6C8FC755;">Weekly — every Sunday</div>`;
+    html += `<div class="section active"><div class="section-head"><div class="section-title">Weekly Tasks</div></div><div class="items">`;
+    WEEKLY_TASKS.forEach(item => {
+      const done = !!localState[item.id];
+      html += `<div class="item ${done?'done':''}" data-cycle="weekly" data-ckey="${key}" data-id="${item.id}">
+        <div class="box"></div><span class="label">${item.label}</span>${item.note?`<span class="note">${item.note}</span>`:''}</div>`;
+    });
+    html += `</div></div>`;
+  } else {
+    html += `<div class="level-detail">Weekly tasks next due in <b>${wk.daysUntil}</b> day(s) — every Sunday.</div>`;
+  }
+
+  if (mo.isDue) {
+    const key = `monthly:${mo.monthKey}`;
+    if (!(key in cycleState)) cycleState[key] = await loadCycleState(key);
+    const localState = cycleState[key] || {};
+    html += `<div class="day-badge" style="background:#E8A33D22; color:#E8A33D; border:1px solid #E8A33D55;">Monthly — first Sunday</div>`;
+    html += `<div class="section active"><div class="section-head"><div class="section-title">Monthly Tasks</div></div><div class="items">`;
+    MONTHLY_TASKS.forEach(item => {
+      const done = !!localState[item.id];
+      html += `<div class="item ${done?'done':''}" data-cycle="monthly" data-ckey="${key}" data-id="${item.id}">
+        <div class="box"></div><span class="label">${item.label}</span>${item.note?`<span class="note">${item.note}</span>`:''}</div>`;
+    });
+    html += `</div></div>`;
+  } else {
+    html += `<div class="level-detail">Monthly tasks next due in <b>${mo.daysUntil}</b> day(s) — first Sunday of the month.</div>`;
+  }
+
+  return html;
+}
+
+let state = {};
+let settings = { level: 1 };
+let customTasks = []; // kept for storage backward-compat, unused in UI now
+let storageOk = true;
+let activeTab = 'routine';
+
+const EXTRAS_KEY = 'extras_persistent';
+const GOAL_LISTS = {
+  weekly: { key: 'weekly_goals_persistent', data: [] },
+  monthly: { key: 'monthly_goals_persistent', data: [] },
+};
+const CONVO_KEY = 'convo_link';
+let convoLink = '';
+
+async function loadAll() {
+  const key = todayKey(new Date());
+  try {
+    const res = await window.storage.get(key, false);
+    state = res && res.value ? JSON.parse(res.value) : {};
+  } catch (e) { state = {}; }
+  try {
+    const res = await window.storage.get(SETTINGS_KEY, false);
+    settings = res && res.value ? JSON.parse(res.value) : { level: 1 };
+  } catch (e) { settings = { level: 1 }; }
+  try {
+    const res = await window.storage.get(GOAL_LISTS.weekly.key, false);
+    GOAL_LISTS.weekly.data = res && res.value ? JSON.parse(res.value) : [];
+  } catch (e) { GOAL_LISTS.weekly.data = []; }
+  try {
+    const res = await window.storage.get(GOAL_LISTS.monthly.key, false);
+    GOAL_LISTS.monthly.data = res && res.value ? JSON.parse(res.value) : [];
+  } catch (e) { GOAL_LISTS.monthly.data = []; }
+  try {
+    const res = await window.storage.get(CONVO_KEY, false);
+    convoLink = res && res.value ? res.value : '';
+  } catch (e) { convoLink = ''; }
+}
+
+async function saveState() {
+  const key = todayKey(new Date());
+  try { await window.storage.set(key, JSON.stringify(state), false); }
+  catch (e) { storageOk = false; }
+}
+
+async function saveSettings() {
+  try { await window.storage.set(SETTINGS_KEY, JSON.stringify(settings), false); }
+  catch (e) { storageOk = false; }
+}
+
+async function saveGoalList(kind) {
+  try { await window.storage.set(GOAL_LISTS[kind].key, JSON.stringify(GOAL_LISTS[kind].data), false); }
+  catch (e) { storageOk = false; }
+}
+
+async function saveConvoLink() {
+  try { await window.storage.set(CONVO_KEY, convoLink, false); }
+  catch (e) { storageOk = false; }
+}
+
+function minsNow() { const d = new Date(); return d.getHours()*60 + d.getMinutes(); }
+
+function toggle(id) { state[id] = !state[id]; saveState(); render(); }
+
+function fmtTime(mins) {
+  const h = Math.floor(mins/60), m = mins%60;
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m.toString().padStart(2,'0')} ${ampm}`;
+}
+
+function itemRow(item) {
+  const done = !!state[item.id];
+  return `<div class="item ${done?'done':''}" data-id="${item.id}">
+    <div class="box"></div>
+    <span class="label">${item.label}</span>
+    ${item.note ? `<span class="note">${item.note}</span>` : ''}
+  </div>`;
+}
+
+function sectionBlock(sec, now) {
+  const isActive = now >= sec.start && now < sec.end;
+  return `<div class="section ${isActive?'active':''}">
+    <div class="section-head">
+      <div class="section-title">${sec.title}</div>
+      <div class="section-time">${fmtTime(sec.start)}–${fmtTime(sec.end)} ${isActive?'<span class="now-tag">Now</span>':''}</div>
+    </div>
+    <div class="items">${sec.items.map(itemRow).join('')}</div>
+  </div>`;
+}
+
+function renderRoutineTab(d, now) {
+  let secs = routineSections(d);
+  return secs.map(s => sectionBlock(s, now)).join('');
+}
+
+function renderWorkoutTab(d) {
+  const dow = d.getDay();
+  const w = WORKOUTS[dow];
+  let html = `<div class="day-badge" style="background:${w.color}22; color:${w.color}; border:1px solid ${w.color}55;">${DAY_NAMES[dow]} — ${w.label}</div>`;
+
+  html += `<div class="level-row">`;
+  LEVELS.forEach(l => {
+    html += `<div class="level-btn ${settings.level===l.n?'sel':''}" data-level="${l.n}">Level ${l.n}</div>`;
+  });
+  html += `</div>`;
+  const lvl = LEVELS.find(l => l.n === settings.level) || LEVELS[0];
+  html += `<div class="level-detail"><b>${lvl.range}</b> — ${lvl.detail}</div>`;
+
+  html += sectionBlock({ id:'warmup', title:'Warm-up (5–10 min)', start:0, end:0, items: WARMUP }, -1);
+  html += sectionBlock({ id:'mobility', title:'Morning Mobility (10–15 min)', start:0, end:0, items: MORNING_MOBILITY }, -1);
+  html += sectionBlock({ id:'main', title:`Today: ${w.label}`, start:0, end:0, items: w.items }, -1);
+  return html;
+}
+
+function renderNutritionTab(now, d) {
+  return nutritionSections(d).map(s => sectionBlock(s, now)).join('');
+}
+
+function renderGoalTab(kind) {
+  const list = GOAL_LISTS[kind].data;
+  const title = kind === 'weekly' ? 'Weekly Goals' : 'Monthly Goals';
+  let html = `<div class="add-box">
+    <div class="hint">Paste your ${title.toLowerCase()} (one per line). Set a category — it applies to this batch. This list persists — it does not auto-clear; check things off or delete them yourself.</div>
+    <input type="text" id="categoryInput" placeholder="Category (e.g. Work, Errand, Health) — optional">
+    <textarea id="customInput" placeholder="e.g.&#10;Finish assignment&#10;Call the electrician"></textarea>
+    <button class="add-btn" id="addCustomBtn">Add tasks</button>
+  </div>`;
+  if (list.length === 0) {
+    html += `<div class="empty-note">No ${title.toLowerCase()} added yet.</div>`;
+  } else {
+    const groups = {};
+    list.forEach(t => {
+      const cat = t.category || 'General';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(t);
+    });
+    Object.keys(groups).forEach(cat => {
+      html += `<div class="section active"><div class="section-head"><div class="section-title">${cat}</div></div><div class="items">`;
+      groups[cat].forEach(t => {
+        html += `<div class="item ${t.done?'done':''}" data-goalkind="${kind}" data-cid="${t.id}">
+          <div class="box"></div><span class="label">${t.label}</span>
+          <span class="del-btn" data-deltype="${kind}" data-delid="${t.id}">×</span>
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+  }
+  return html;
+}
+
+function addGoalTasks(kind, text, category) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return;
+  lines.forEach(l => {
+    GOAL_LISTS[kind].data.push({ id: 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), label: l, done: false, category: (category || '').trim() || 'General' });
+  });
+  saveGoalList(kind);
+  render();
+}
+
+function toggleGoalTask(kind, id) {
+  const t = GOAL_LISTS[kind].data.find(x => x.id === id);
+  if (t) t.done = !t.done;
+  saveGoalList(kind);
+  render();
+}
+
+function deleteGoalTask(kind, id) {
+  GOAL_LISTS[kind].data = GOAL_LISTS[kind].data.filter(x => x.id !== id);
+  saveGoalList(kind);
+  render();
+}
+
+function renderConvoTab() {
+  const safeLink = convoLink ? convoLink.replace(/"/g, '&quot;') : '';
+  let html = `<div class="add-box">
+    <div class="hint">Paste the link to your other Claude conversation (where you get the daily task list). Saved permanently, editable anytime.</div>
+    <input type="text" id="convoLinkInput" placeholder="https://claude.ai/chat/..." value="${safeLink}">
+    <button class="add-btn" id="saveConvoBtn">Save link</button>
+  </div>`;
+  if (convoLink) {
+    html += `<div class="section active"><div class="section-head"><div class="section-title">Your conversation</div>
+      <a href="${safeLink}" target="_blank" rel="noopener" style="color:var(--dawn); font-size:12.5px; text-decoration:none;">Open in new tab ↗</a>
+    </div></div>`;
+    html += `<div class="empty-note">Note: most chat sites (including claude.ai) block being embedded inline for security reasons, so a live preview usually won't render here — the link above opens it directly instead.</div>`;
+    html += `<iframe src="${safeLink}" style="width:100%; height:480px; border:1px solid var(--line); border-radius:14px; margin-top:8px; background:rgba(243,238,227,0.02);" loading="lazy"></iframe>`;
+  } else {
+    html += `<div class="empty-note">No link saved yet.</div>`;
+  }
+  return html;
+}
+
+async function render() {
+  const now = minsNow();
+  const d = new Date();
+  document.getElementById('dateLabel').textContent = d.toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+
+  let html = '';
+  if (activeTab === 'routine') html = renderRoutineTab(d, now);
+  else if (activeTab === 'workout') html = renderWorkoutTab(d);
+  else if (activeTab === 'nutrition') html = renderNutritionTab(now, d);
+  else if (activeTab === 'weeklygoals') html = renderGoalTab('weekly');
+  else if (activeTab === 'monthlygoals') html = renderGoalTab('monthly');
+  else if (activeTab === 'convo') html = renderConvoTab();
+  else html = await renderCyclesTab(d);
+
+  document.getElementById('tabContent').innerHTML = html;
+
+  document.querySelectorAll('.item').forEach(el => {
+    if (el.dataset.cycle) {
+      el.addEventListener('click', () => {
+        const key = el.dataset.ckey, id = el.dataset.id;
+        if (!cycleState[key]) cycleState[key] = {};
+        cycleState[key][id] = !cycleState[key][id];
+        saveCycleState(key, cycleState[key]);
+        render();
+      });
+    } else if (el.dataset.goalkind) {
+      el.addEventListener('click', (e) => {
+        if (e.target.classList.contains('del-btn')) return;
+        toggleGoalTask(el.dataset.goalkind, el.dataset.cid);
+      });
+    } else {
+      el.addEventListener('click', () => toggle(el.dataset.id));
+    }
+  });
+  document.querySelectorAll('.del-btn').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const kind = el.dataset.deltype;
+      if (kind === 'weekly' || kind === 'monthly') deleteGoalTask(kind, el.dataset.delid);
+    });
+  });
+  const addBtn = document.getElementById('addCustomBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      const ta = document.getElementById('customInput');
+      const cat = document.getElementById('categoryInput');
+      const kind = activeTab === 'weeklygoals' ? 'weekly' : 'monthly';
+      addGoalTasks(kind, ta.value, cat ? cat.value : '');
+    });
+  }
+  const saveConvoBtn = document.getElementById('saveConvoBtn');
+  if (saveConvoBtn) {
+    saveConvoBtn.addEventListener('click', () => {
+      const inp = document.getElementById('convoLinkInput');
+      convoLink = (inp.value || '').trim();
+      saveConvoLink();
+      render();
+    });
+  }
+  document.querySelectorAll('.level-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      settings.level = parseInt(el.dataset.level, 10);
+      saveSettings();
+      render();
+    });
+  });
+
+  // streak / progress across whatever the current tab's items are
+  let totalItems = 0, doneItems = 0;
+  document.querySelectorAll('.item').forEach(el => {
+    totalItems++;
+    if (el.dataset.cycle) {
+      const s = cycleState[el.dataset.ckey] || {};
+      if (s[el.dataset.id]) doneItems++;
+    } else if (el.dataset.goalkind) {
+      const t = GOAL_LISTS[el.dataset.goalkind].data.find(x => x.id === el.dataset.cid);
+      if (t && t.done) doneItems++;
+    } else if (state[el.dataset.id]) {
+      doneItems++;
+    }
+  });
+  const pct = totalItems ? Math.round((doneItems/totalItems)*100) : 0;
+  document.getElementById('streakRow').innerHTML = `
+    <div class="streak-pill"><b>${doneItems}/${totalItems}</b> done</div>
+    <div class="streak-pill"><b>${pct}%</b> complete</div>
+    ${!storageOk ? '<div class="streak-pill">Saving offline — check may not persist</div>' : ''}
+  `;
+}
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    activeTab = t.dataset.tab;
+    render();
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  state = {};
+  await saveState();
+  render();
+});
+
+(async () => {
+  await initPinGate();
+  await loadAll();
+  render();
+  setInterval(render, 60000);
+})();
+</script>
+</body>
+</html>
