@@ -1,4 +1,16 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+// Vercel's Upstash Marketplace integration has injected credentials under
+// different env var names depending on how the database was connected -
+// check both so this works either way.
+const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+if (!url || !token) {
+  console.error('Missing Redis credentials - connect an Upstash Redis database to this project in the Storage tab.');
+}
+
+const kv = new Redis({ url, token });
 
 // Very small "auth": everything is namespaced by whatever passphrase the
 // client sends in the x-pin header. Same passphrase => same data.
@@ -13,6 +25,11 @@ function scopeFor(pin, shared) {
 }
 
 export default async function handler(req, res) {
+  if (!url || !token) {
+    res.status(500).json({ error: 'No Redis database connected. Add an Upstash Redis database in the Vercel Storage tab.' });
+    return;
+  }
+
   const pin = req.headers['x-pin'];
   const { key, shared, prefix, list } = req.query;
 

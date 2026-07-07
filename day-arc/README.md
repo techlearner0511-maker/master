@@ -24,14 +24,14 @@ anyone you don't want seeing/editing your data.
      build step needed).
    - Deploy.
 
-3. **Add a KV database** (this is the part that makes cross-device sync work)
-   - In your new Vercel project, open the **Storage** tab.
-   - Create a database → choose the **KV** / **Redis** option (Vercel's
-     storage marketplace — the exact naming may have shifted a bit in their
-     dashboard since I can't check it live, but look for "KV" or "Redis").
-   - Connect it to this project. Vercel will automatically add the
-     `KV_REST_API_URL` / `KV_REST_API_TOKEN` env vars your `/api/kv.js`
-     function needs — you don't set those by hand.
+3. **Add a Redis database** (this is the part that makes cross-device sync work)
+   - In your Vercel project, open the **Storage** tab.
+   - Click **Create Database** (or "Connect Database") → under Marketplace
+     Database Providers, choose **Upstash** → pick the **Redis** product →
+     follow the prompts to create it.
+   - Connect it to this project. Vercel will inject the credentials your
+     `/api/kv.js` function needs as environment variables automatically —
+     you don't set those by hand.
    - Redeploy the project once the database is connected (Vercel usually
      prompts you to).
 
