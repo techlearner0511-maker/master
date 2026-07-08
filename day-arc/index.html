@@ -922,7 +922,64 @@ function deleteGoalTask(kind, id) {
   render();
 }
 
+function renderConvoTab() {
+  let html = `<div class="add-box">
+    <div class="hint">Save links to your other Claude conversations (e.g. where you get the daily task list). Give each one a name — add as many as you like, then tap a name to preview it.</div>
+    <input type="text" id="convoNameInput" placeholder="Name (e.g. Daily Tasks, Journal, Project X)">
+    <input type="text" id="convoLinkInput" placeholder="https://claude.ai/chat/...">
+    <button class="add-btn" id="saveConvoBtn">Add link</button>
+  </div>`;
 
+  if (convoLinks.length === 0) {
+    html += `<div class="empty-note">No links saved yet.</div>`;
+    return html;
+  }
+
+  html += `<div class="convo-tabs">`;
+  convoLinks.forEach(c => {
+    const isActive = c.id === activeConvoId;
+    html += `<div class="convo-tab-btn ${isActive?'sel':''}" data-convoid="${c.id}">
+      <span class="convo-tab-name">${c.name}</span>
+      <span class="convo-del" data-convodelid="${c.id}">×</span>
+    </div>`;
+  });
+  html += `</div>`;
+
+  const active = convoLinks.find(c => c.id === activeConvoId) || convoLinks[0];
+  if (active) {
+    const safeLink = active.link.replace(/"/g, '&quot;');
+    html += `<div class="section active"><div class="section-head"><div class="section-title">${active.name}</div>
+      <a href="${safeLink}" target="_blank" rel="noopener" style="color:var(--dawn); font-size:12.5px; text-decoration:none;">Open in new tab ↗</a>
+    </div></div>`;
+    html += `<div class="empty-note">Note: most chat sites (including claude.ai) block being embedded inline for security reasons, so a live preview usually won't render here — the link above opens it directly instead.</div>`;
+    html += `<iframe src="${safeLink}" style="width:100%; height:480px; border:1px solid var(--line); border-radius:14px; margin-top:8px; background:rgba(243,238,227,0.02);" loading="lazy"></iframe>`;
+  }
+  return html;
+}
+
+function addConvoLink(name, link) {
+  link = (link || '').trim();
+  if (!link) return;
+  name = (name || '').trim() || `Conversation ${convoLinks.length + 1}`;
+  const id = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  convoLinks.push({ id, name, link });
+  activeConvoId = id;
+  saveConvo();
+  render();
+}
+
+function deleteConvoLink(id) {
+  convoLinks = convoLinks.filter(c => c.id !== id);
+  if (activeConvoId === id) activeConvoId = convoLinks[0] ? convoLinks[0].id : null;
+  saveConvo();
+  render();
+}
+
+function selectConvoLink(id) {
+  activeConvoId = id;
+  saveConvo();
+  render();
+}
 
 async function render() {
   const now = minsNow();
